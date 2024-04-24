@@ -1,3 +1,5 @@
+#--- START OF FILE count.py ---
+
 from subprocess import list2cmdline
 import sys
 
@@ -25,7 +27,7 @@ import torch.backends.cudnn as cudnn
 ########################################
 
 
-source_dir = 'inference/input/test3.mp4' # '0'    # 要打开的文件。若要调用摄像头，需要设置为字符串'0'，而不是数字0，按q退出播放
+source_dir = 'inference/input/test4.mp4' # '0'    # 要打开的文件。若要调用摄像头，需要设置为字符串'0'，而不是数字0，按q退出播放
 output_dir = 'inference/output' # 要保存到的文件夹
 show_video = True   # 运行时是否显示
 save_video = True   # 是否保存运行结果视频
@@ -37,8 +39,8 @@ point_idx = 0       # 方框的检测点位置(0, 1, 2, 3, 4)，看下边的图�
 
 lines = [           # 在这里定义检测线
     # 一条线就是一个list，内容为[x1, y1, x2, y2, (R, G, B), 线的粗细]，例如：
-    [300, 1080, 1250, 600, (255,0,0), 2],
-    [1660, 610, 1920, 900, (0,255,0), 2],
+    [0, 0, 1300, 300, (255,0,0), 2],
+    #[0, 0, 0, 0, (0,0,255), 2],
 
 ]
 
@@ -92,6 +94,10 @@ def big_side(line, x, y) -> bool:
 # 每条线添加一个list，统计大->小、小->大两个方向穿过检测线的物体数，下标为6
 for line in lines:
     line.append([0,0])
+
+########################################
+
+id_list = []   # 用于记录所有出现过的ID
 
 ########################################
 
@@ -362,6 +368,13 @@ def detect(opt):
                                 f.write(('%g ' * 10 + '\n') % (frame_idx, identity, bbox_left,
                                                             bbox_top, bbox_w, bbox_h, -1, -1, -1, -1))  # label format
                                                         # 修改后的格式为：帧序号、框序号、框到左边距离、框到顶上距离、框横长、框竖高，原命名应该是把顶上和左边命名写反了
+
+                # 记录出现过的ID
+                for output in outputs:
+                    identity = output[-1]
+                    if identity not in id_list:
+                        id_list.append(identity)
+
             else:
                 deepsort.increment_ages()
 
@@ -377,6 +390,9 @@ def detect(opt):
             for line_idx, line in enumerate(lines):
                 cv2.putText(im0, f'dir1 = {line[6][0]}', (gap*line_idx+25, 25), cv2.FONT_HERSHEY_COMPLEX, 1, line[4], 2)    # 画布、内容、左下角坐标、字体、字号（数字越大字越大）、字颜色、笔画粗细
                 cv2.putText(im0, f'dir2 = {line[6][1]}', (gap*line_idx+25, 50), cv2.FONT_HERSHEY_COMPLEX, 1, line[4], 2)    # 画布、内容、左下角坐标、字体、字号（数字越大字越大）、字颜色、笔画粗细
+
+            # 显示ID数量
+            cv2.putText(im0, f'Total IDs: {len(id_list)}', (25, 75), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
 
             # 写入保存文件
             if save_txt:
@@ -399,7 +415,7 @@ def detect(opt):
             # Save results (image with detections)
             if save_vid:
                 if vid_path != save_path:  # new video
-                    vid_path = save_path
+                    vid_path =                   save_path
                     if isinstance(vid_writer, cv2.VideoWriter):
                         vid_writer.release()  # release previous video writer
                     if vid_cap:  # video
@@ -446,3 +462,5 @@ if __name__ == '__main__':
 
     with torch.no_grad():
         detect(args)
+
+#--- END OF FILE count.py ---
